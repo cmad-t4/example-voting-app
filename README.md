@@ -1,6 +1,5 @@
 Example Voting App
 =========
-MyLine
 Getting started
 ---------------
 
