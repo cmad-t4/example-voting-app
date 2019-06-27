@@ -1,65 +1,66 @@
-pipeline {
-agent none
-    stages {
-agent {
-        docker{
-                image 'maven:3.6.1-jdk-8-slim'
-                args '-v $HOME/.m2:/root/.m2'
-        }
-}
-        stage('build') {
-            steps {
-                echo 'This is the build stage'
-                dir('worker'){
-		sh 'mvn compile'}
-            }
-        }
-        stage('test') {
-agent {
-        docker{
-                image 'maven:3.6.1-jdk-8-slim'
-                args '-v $HOME/.m2:/root/.m2'
-        }
-}
-            steps {
-                echo 'This is the teststage'
-                dir('worker'){
-                sh 'mvn clean test'}
-            }
-        }
-        stage('package') {
-agent {
-        docker{
-                image 'maven:3.6.1-jdk-8-slim'
-                args '-v $HOME/.m2:/root/.m2'
-        }
-}
-            steps {
-                echo 'This is the package stage'
-                dir('worker'){
-                sh 'mvn package -DskipTests'
-		archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true }
-            }
-        }
-   stage('docker-package'){
-          agent any
-          steps{
-            echo 'Packaging worker app with docker'
-            script{
-              docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
-                  def workerImage = docker.build("sasravin/worker:v${env.BUILD_ID}", "./worker")
-                  workerImage.push()
-                  workerImage.push("latest")
+pipeline{
+    agent none
+    stages{
+        stage('build'){
+            agent{
+              docker{
+               image 'maven:3.6.1-jdk-8-slim'
+               args '-v $HOME/.m2:/root/.m2'
               }
             }
-          }
-      }
+            steps{
+                echo 'building worker app'
+                dir('worker'){
+                  sh 'mvn compile'
+                }
+            }
+        }
+        stage('test'){
+            agent{
+              docker{
+               image 'maven:3.6.1-jdk-8-slim'
+               args '-v $HOME/.m2:/root/.m2'
+              }
+            }
+            steps{
+                echo 'running unit tests on worker app'
+                dir('worker'){
+                  sh 'mvn clean test'
+                }
+            }
+        }
+        stage('package'){
+            agent{
+              docker{
+               image 'maven:3.6.1-jdk-8-slim'
+               args '-v $HOME/.m2:/root/.m2'
+              }
+            }
+            steps{
+                echo 'packaging worker app into a jarfile'
+                dir('worker'){
+                  sh 'mvn package -DskipTests'
+                  archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+                }
+            }
+        }
+        stage('docker-package'){
+            agent any
+            steps{
+              echo 'Packaging worker app with docker'
+              script{
+                docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+                    def workerImage = docker.build("sasravin/worker:v${env.BUILD_ID}", "./worker")
+                    workerImage.push()
+                    workerImage.push("latest")
+                }
+              }
+            }
+        }
     }
     post{
         always{
-            echo 'This si the Post action'
+            echo 'the job is complete'
         }
     }
-        
-    }
-
+}
