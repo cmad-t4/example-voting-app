@@ -44,18 +44,19 @@ pipeline{
                 }
             }
         }
-        stage('docker-package'){
+        stage('deploy'){
             agent any
+	when { branch "master"}
             steps{
-              echo 'Packaging worker app with docker'
+              echo 'Packaging worker app with docker compose'
               script{
-                docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
-                    def workerImage = docker.build("sasravin/worker:v${env.BUILD_ID}", "./worker")
-                    workerImage.push()
-                    workerImage.push("latest")
+              		echo 'deploying'
+			sh 'docker-compose up -d':
                 }
               }
             }
+
+
         }
     }
     post{
