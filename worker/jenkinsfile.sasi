@@ -1,36 +1,62 @@
-pipeline {
-    agent any
-    tools{
-maven 'Maven 3.6.1' 	}
-    stages {
-        stage('build') {
-            steps {
-                echo 'This is the build stage'
+pipeline{
+    agent none
+    stages{
+        stage('build'){
+            agent{
+              docker{
+               image 'maven:3.6.1-jdk-8-slim'
+               args '-v $HOME/.m2:/root/.m2'
+              }
+            }
+            steps{
+                echo 'building worker app'
                 dir('worker'){
-		sh 'mvn compile'}
+                  sh 'mvn compile'
+                }
             }
         }
-        stage('test') {
-            steps {
-                echo 'This is the teststage'
+        stage('test'){
+            agent{
+              docker{
+               image 'maven:3.6.1-jdk-8-slim'
+               args '-v $HOME/.m2:/root/.m2'
+              }
+            }
+            steps{
+                echo 'running unit tests on worker app'
                 dir('worker'){
-                sh 'mvn clean test'}
+                  sh 'mvn clean test'
+                }
             }
         }
-        stage('package') {
-            steps {
-                echo 'This is the package stage'
+        stage('package'){
+            agent{
+              docker{
+               image 'maven:3.6.1-jdk-8-slim'
+               args '-v $HOME/.m2:/root/.m2'
+              }
+            }
+            steps{
+                echo 'packaging worker app into a jarfile'
                 dir('worker'){
-                sh 'mvn package -DskipTests'
-		archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true }
+                  sh 'mvn package -DskipTests'
+                  archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+                }
             }
         }
+       stage('deploy'){
+            agent any
+            when { branch "master"}
+            steps{
+              echo 'Deploy with Docker Compose'
+              sh 'docker-compose up -d'
+            }
+        }
+        
     }
     post{
         always{
-            echo 'This si the Post action'
+            echo 'the job is complete'
         }
     }
-        
-    }
-
+}
