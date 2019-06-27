@@ -34,6 +34,7 @@ pipeline{
             }
         }
         stage('package'){
+			when { branch "master"}
 		    agent{
 		          docker{
 		            image 'maven:3.6.1-jdk-8-slim'
@@ -51,6 +52,7 @@ pipeline{
         }
 		
 		stage('docker-package'){
+			when { branch "master"}
 		          agent any
 		          steps{
 		            echo 'Packaging worker app with docker'
@@ -65,6 +67,7 @@ pipeline{
 		      }
 			  
 	  		stage('deploy'){
+				when { branch "master"}
 	  		          agent any
 	  		          steps{
 	  		            script{
@@ -79,7 +82,7 @@ pipeline{
     
     post{
         always{
-            echo 'In the post block'
+            echo 'In the post block of pipeline'
         }
         
     }
