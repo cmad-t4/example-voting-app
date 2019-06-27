@@ -1,13 +1,16 @@
 pipeline{
     
-    agent any
-	
-	tools{
-		maven 'Maven 3.6.1'
-	}
+    agent none
     
     stages{
         stage('build'){
+		    agent{
+		          docker{
+		            image 'maven:3.6.1-jdk-8-slim'
+		            args '-v $HOME/.m2:/root/.m2'
+		          }
+
+		    }
             steps{
                 echo 'Building worker app'
                 dir('worker'){
@@ -16,6 +19,13 @@ pipeline{
             }
         }
         stage('test'){
+		    agent{
+		          docker{
+		            image 'maven:3.6.1-jdk-8-slim'
+		            args '-v $HOME/.m2:/root/.m2'
+		          }
+
+		    }
             steps{
                 echo 'Running unit tests on worker app'
                 dir('worker'){
@@ -24,6 +34,14 @@ pipeline{
             }
         }
         stage('package'){
+			when { branch "master"}
+		    agent{
+		          docker{
+		            image 'maven:3.6.1-jdk-8-slim'
+		            args '-v $HOME/.m2:/root/.m2'
+		          }
+
+		    }
             steps{
                 echo 'Running package worker app'
                 dir('worker'){
@@ -32,11 +50,39 @@ pipeline{
 				}
             }
         }
+		
+		stage('docker-package'){
+			when { branch "master"}
+		          agent any
+		          steps{
+		            echo 'Packaging worker app with docker'
+		            script{
+		              docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+		                  def workerImage = docker.build("shrikanthhandadi/worker:v${env.BUILD_ID}", "./worker")
+		                  workerImage.push()
+		                  workerImage.push("latest")
+		              }
+		            }
+		          }
+		      }
+			  
+	  		stage('deploy'){
+				when { branch "master"}
+	  		          agent any
+	  		          steps{
+	  		            script{
+	  		              echo 'Deploy (deliver) docker app'
+						  sh 'docker-compose up -d'
+	  		            }
+	  		          }
+	  		      }
+			  
+			  
     }
     
     post{
         always{
-            echo 'In the post block'
+            echo 'In the post block of pipeline'
         }
         
     }
