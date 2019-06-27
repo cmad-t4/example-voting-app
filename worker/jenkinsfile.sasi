@@ -44,17 +44,15 @@ pipeline{
                 }
             }
         }
-        stage('deploy'){
+       stage('deploy'){
             agent any
-	when { branch "master"}
+            when { branch "master"}
             steps{
-              echo 'Packaging worker app with docker compose'
+              echo 'Deploy with Docker Compose'
               sh 'docker-compose up -d'
-              }
             }
-
-
         }
+        
     }
     post{
         always{
