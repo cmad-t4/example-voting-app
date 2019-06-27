@@ -63,6 +63,18 @@ pipeline{
 		            }
 		          }
 		      }
+			  
+	  		stage('deploy'){
+	  		          agent any
+	  		          steps{
+	  		            script{
+	  		              echo 'Deploy (deliver) docker app'
+						  sh 'docker-compose up -d'
+	  		            }
+	  		          }
+	  		      }
+			  
+			  
     }
     
     post{
