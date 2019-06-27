@@ -51,7 +51,7 @@ pipeline{
               echo 'Packaging worker app with docker compose'
               script{
               		echo 'deploying'
-			sh 'docker-compose up -d':
+			sh 'docker-compose up -d'
                 }
               }
             }
